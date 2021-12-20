@@ -1,4 +1,4 @@
-SHITPOST_DESTINATION = '../pictures/'
+SHITPOST_DESTINATION = '../tmp/'
 SOURCE_FOLDER_ID = "1YBIfpyJtZXxS961xav3OAeDiaKnKWiCH"
 USED_FOLDER_ID = "1s9WUZtnfoGLDPIH6lBaNwFtm1QCaNL3m"
 LOG = "../src/tmp/ccd.log"
