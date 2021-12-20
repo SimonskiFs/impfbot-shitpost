@@ -128,3 +128,4 @@ dmypy.json
 .pyre/
 /lib/client_secret.json
 /lib/token.pickle
+/src/auth.py

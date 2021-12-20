@@ -4,18 +4,19 @@ import os
 import shutil
 import logging
 from mimetypes import MimeTypes
-
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-
-# If modifying these scopes, delete the file token.pickle.
 from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
-
-SCOPES = ['https://www.googleapis.com/auth/drive']
+from properties import (
+    SHITPOST_DESTINATION,
+    SCOPES,
+    SOURCE_FOLDER_ID,
+    USED_FOLDER_ID,
+    LOG
+)
 
 # logging
-LOG = "../src/tmp/ccd.log"
 FORMAT = '%(asctime)s %(message)s'
 logging.basicConfig(filename=LOG, level=logging.DEBUG, format=FORMAT)
 
@@ -49,6 +50,7 @@ gdrive_service = get_gdrive_service()
 
 def file_download(file_id, file_name):
     """Downloads a file by its id from Google Drive"""
+    file_name = SHITPOST_DESTINATION + file_name
     request = gdrive_service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
 
@@ -89,10 +91,30 @@ def file_upload(filepath):
     logging.info("File " + name + " downloaded")
 
 
-def download_one_file():
-    """Downloads the first File from the Google Drive shitpost folder"""
-    results = gdrive_service.files().list(fields="nextPageToken, files(id, name)").execute()
+def file_move(file_id, file_name):
+    """Moves a file by its id in Google Drive to used"""
+
+    # Retrieve the existing parents to remove
+    file = gdrive_service.files().get(fileId=file_id, fields='parents').execute()
+    previous_parents = ",".join(file.get('parents'))
+
+    # Move the file to the new folder
+    file = gdrive_service.files().update(
+        fileId=file_id,
+        addParents=USED_FOLDER_ID,
+        removeParents=previous_parents,
+        fields='id, parents'
+    ).execute()
+    logging.info("File " + file_name + " moved")
+
+
+def download_and_move_one_file():
+    """Downloads and deletes the first File from the Google Drive shitpost folder"""
+    results = gdrive_service.files().list(q="'" + SOURCE_FOLDER_ID + "' in parents", pageSize=10,
+                                          fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
     i_d = items[0].get('id')
     name = items[0].get('name')
     file_download(i_d, name)
+    file_move(i_d, name)
+    return name
