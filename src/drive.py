@@ -2,6 +2,7 @@ import io
 import pickle
 import os
 import shutil
+import logging
 from mimetypes import MimeTypes
 
 from googleapiclient.discovery import build
@@ -13,8 +14,14 @@ from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
+# logging
+LOG = "../src/tmp/ccd.log"
+FORMAT = '%(asctime)s %(message)s'
+logging.basicConfig(filename=LOG, level=logging.DEBUG, format=FORMAT)
+
 
 def get_gdrive_service():
+    """Initializes the Google Drive authorization"""
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automlibatically when the authorization flow completes for the first
@@ -41,6 +48,7 @@ gdrive_service = get_gdrive_service()
 
 
 def file_download(file_id, file_name):
+    """Downloads a file by its id from Google Drive"""
     request = gdrive_service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
 
@@ -57,12 +65,13 @@ def file_download(file_id, file_name):
     with open(file_name, 'wb') as f:
         shutil.copyfileobj(fh, f)
 
-    print("File Downloaded")
+    logging.info("File " + file_name + " downloaded")
     # Return True if file Downloaded successfully
     return True
 
 
 def file_upload(filepath):
+    """Uploads a file from a local filepath"""
     # Extract the file name out of the file path
     name = filepath.split('/')[-1]
 
@@ -77,16 +86,13 @@ def file_upload(filepath):
     file = gdrive_service.files().create(
         body=file_metadata, media_body=media, fields='id').execute()
 
-    print("File Uploaded.")
+    logging.info("File " + name + " downloaded")
 
 
-def list_files():
-    destination = '/home/simonski/Data/PycharmProjects/impfbot-shitpost/src'
+def download_one_file():
+    """Downloads the first File from the Google Drive shitpost folder"""
     results = gdrive_service.files().list(fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
-    id = items[0].get('id')
+    i_d = items[0].get('id')
     name = items[0].get('name')
-    file_download(id, name)
-
-
-list_files()
+    file_download(i_d, name)
